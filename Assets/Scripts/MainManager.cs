@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEditor;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -12,7 +14,10 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public GameObject GameOverText;
-    
+    public string PlayerName;
+    public GameObject highScoreText;
+
+
     private bool m_Started = false;
     private int m_Points;
     
@@ -22,6 +27,13 @@ public class MainManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        
+        if (NameStoreUnit.Instance != null)
+        {
+            PlayerName = NameStoreUnit.Instance.theName;
+        }
+
+        LoadName();
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -37,6 +49,7 @@ public class MainManager : MonoBehaviour
             }
         }
     }
+
 
     private void Update()
     {
@@ -60,6 +73,8 @@ public class MainManager : MonoBehaviour
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
         }
+
+        highScoreText.GetComponent<Text>().text = "Best Score: " + PlayerName + $"Score : {m_Points}";
     }
 
     void AddPoint(int point)
@@ -72,5 +87,35 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        SaveName();
+    }
+
+    // Сохранение данных 
+    [System.Serializable]
+    class SaveData
+    {
+        public string PlayerName;
+    }
+
+    public void SaveName()
+    {
+        SaveData data = new SaveData();
+        data.PlayerName = PlayerName;
+
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadName()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            PlayerName = data.PlayerName;
+        }
     }
 }
